@@ -11,24 +11,22 @@ char playerTwo[15];
 char playerX = 'X';
 char playerO = 'O';
 char scores[ROW][COL];
+char save1[ROW][COL];
+char save2[ROW][COL];
+char save3[ROW][COL];
+char save4[ROW][COL];
+
 
 
 // Prototype
 void playerName();
+void save();
 void layout();
 void init_scores();
 void choice();
 void fill_box();
 void loadGame();
 int check(char disc);
-
-typedef struct {
-    int id;
-    char playerOneName[15];
-    char playerTwoName[15];
-    char newGameBoard[42];
-    int numberOfSpaceLeft;
-} UserInfo;
 
 
 int main()
@@ -125,29 +123,54 @@ int main()
 void loadGame() {
     int k;
 
-    printf(" 1 List all saved games\n");
-    printf(" 2 List all saved games for a particular player \n");
-    printf(" 3 Show the board of one of the saved games\n");
-    printf(" 4 Load game\n");
+    printf(" Press 1 to load save1\n");
+    printf(" Press 2 to load save2\n");
+    printf(" Press 3 to load save3\n");
+    printf(" Press 4 to load save4\n");
+
     printf(" 5 Return to main menu\n");
 
     scanf("%d", &k);
 
     switch(k) {
         case 1:
-        //List all saved games
+        for (int i = 0; i < ROW; i++) {
+            for (int j = 0; j < COL; j++) {
+                scores[i][j] = save1[i][j];
+            }
+        }
+        layout();
+        choice();
         break;
 
         case 2:
-        //List saved games for player
+        for (int i = 0; i < ROW; i++) {
+            for (int j = 0; j < COL; j++) {
+                scores[i][j] = save2[i][j];
+            }
+        }
+        layout();
+        choice();
         break;
 
         case 3:
-            //Show board of saved game
+            for (int i = 0; i < ROW; i++) {
+            for (int j = 0; j < COL; j++) {
+                scores[i][j] = save3[i][j];
+            }
+        }
+        layout();
+        choice();
         break;
 
         case 4:
-            //Load game
+        for (int i = 0; i < ROW; i++) {
+            for (int j = 0; j < COL; j++) {
+                scores[i][j] = save4[i][j];
+            }
+        }
+        layout();
+        choice();
         break;
 
         case 5:
@@ -210,8 +233,14 @@ void choice()
 
     while (true)
     {
-        printf("\nChoose box: ");
+        printf("\nChoose box or press 8 to save: ");
         scanf("%i", &input);
+
+        if (input == 8) 
+        {
+            save();
+            main();
+        }
 
         switch(input)
         {
@@ -249,6 +278,55 @@ void choice()
             break;
         }
     }
+}
+
+void save()
+{
+    int b;
+    printf(" Press 1 to save save1\n");
+    printf(" Press 2 to save save2\n");
+    printf(" Press 3 to save save3\n");
+    printf(" Press 4 to save save4\n");
+
+    printf(" 5 Return to main menu\n");
+
+    scanf("%d", &b);
+
+    switch(b) {
+
+        case 1:
+        for (int i = 0; i < ROW; i++) {
+            for (int j = 0; j < COL; j++) {
+                save1[i][j] = scores[i][j];
+            }
+        }
+        break;
+
+        case 2:
+        for (int i = 0; i < ROW; i++) {
+            for (int j = 0; j < COL; j++) {
+                save2[i][j] = scores[i][j];
+            }
+        }
+        break;
+
+        case 3:
+        for (int i = 0; i < ROW; i++) {
+            for (int j = 0; j < COL; j++) {
+                save3[i][j] = scores[i][j];
+            }
+        }
+        break;
+
+        case 4:
+        for (int i = 0; i < ROW; i++) {
+            for (int j = 0; j < COL; j++) {
+                save4[i][j] = scores[i][j];
+            }
+        }
+        break;
+    }
+
 }
 
 void fill_box()
