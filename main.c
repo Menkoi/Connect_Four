@@ -11,23 +11,33 @@ char playerTwo[15];
 char playerX = 'X';
 char playerO = 'O';
 char scores[ROW][COL];
-char save1[ROW][COL];
-char save2[ROW][COL];
-char save3[ROW][COL];
-char save4[ROW][COL];
 
+
+void readSave();
+int readFileLine(const char *filename);
+
+typedef struct {
+    int id;
+    char playerOneName[15];
+    char playerTwoName[15];
+    char gameBoard[42]
+} profile;
 
 
 // Prototype
 void playerName();
 void save();
+void saveId();
+void saveBoard();
+void loadTest();
+void showGames();
+
 void layout();
 void init_scores();
 void choice();
 void fill_box();
 void loadGame();
 int check(char disc);
-
 
 int main()
 {
@@ -50,7 +60,6 @@ int main()
         break;
 
         case 2:
-          printf("Loaded game\n");
           printf("\n");
           loadGame();
         break;
@@ -120,69 +129,7 @@ int main()
     }
 }
 
-void loadGame() {
-    int k;
 
-    printf(" Press 1 to load save1\n");
-    printf(" Press 2 to load save2\n");
-    printf(" Press 3 to load save3\n");
-    printf(" Press 4 to load save4\n");
-
-    printf(" 5 Return to main menu\n");
-
-    scanf("%d", &k);
-
-    switch(k) {
-        case 1:
-        for (int i = 0; i < ROW; i++) {
-            for (int j = 0; j < COL; j++) {
-                scores[i][j] = save1[i][j];
-            }
-        }
-        layout();
-        choice();
-        break;
-
-        case 2:
-        for (int i = 0; i < ROW; i++) {
-            for (int j = 0; j < COL; j++) {
-                scores[i][j] = save2[i][j];
-            }
-        }
-        layout();
-        choice();
-        break;
-
-        case 3:
-            for (int i = 0; i < ROW; i++) {
-            for (int j = 0; j < COL; j++) {
-                scores[i][j] = save3[i][j];
-            }
-        }
-        layout();
-        choice();
-        break;
-
-        case 4:
-        for (int i = 0; i < ROW; i++) {
-            for (int j = 0; j < COL; j++) {
-                scores[i][j] = save4[i][j];
-            }
-        }
-        layout();
-        choice();
-        break;
-
-        case 5:
-            main();
-        break;
-
-        default:
-        printf("Choose either 1 or 2");
-        // program ends if not 1 or 2 were chosen
-        break;
-    }
-}
 
 // Players input name
 void playerName() {
@@ -233,10 +180,10 @@ void choice()
 
     while (true)
     {
-        printf("\nChoose box or press 8 to save: ");
+        printf("\nChoose box or press 0 to save: ");
         scanf("%i", &input);
 
-        if (input == 8) 
+        if(input == 0)
         {
             save();
             main();
@@ -283,51 +230,153 @@ void choice()
 void save()
 {
     int b;
-    printf(" Press 1 to save save1\n");
-    printf(" Press 2 to save save2\n");
-    printf(" Press 3 to save save3\n");
-    printf(" Press 4 to save save4\n");
-
-    printf(" 5 Return to main menu\n");
+    printf("\n");
+    printf(" Press 1 to save\n");
+    printf("        OR\n");
+    printf(" 2 Return to main menu\n");
+    printf("*Going to main menu will lose all progress*\n");
 
     scanf("%d", &b);
 
     switch(b) {
 
         case 1:
-        for (int i = 0; i < ROW; i++) {
-            for (int j = 0; j < COL; j++) {
-                save1[i][j] = scores[i][j];
-            }
-        }
+         saveId();
+         saveBoard();
         break;
 
         case 2:
-        for (int i = 0; i < ROW; i++) {
-            for (int j = 0; j < COL; j++) {
-                save2[i][j] = scores[i][j];
-            }
-        }
-        break;
-
-        case 3:
-        for (int i = 0; i < ROW; i++) {
-            for (int j = 0; j < COL; j++) {
-                save3[i][j] = scores[i][j];
-            }
-        }
-        break;
-
-        case 4:
-        for (int i = 0; i < ROW; i++) {
-            for (int j = 0; j < COL; j++) {
-                save4[i][j] = scores[i][j];
-            }
-        }
+            main();
         break;
     }
 
 }
+
+/* Get the numbers of lines in a file for the ID */
+int readFileLine(const char *filename) {
+    int lines = 1;
+    char ch;
+    FILE *file = fopen(filename, "r");
+    while ((ch = fgetc(file)) != EOF) { if (ch == '\n') { lines++; }}
+    fclose(file);
+    return lines;
+}
+
+/* saves id, players, and spaces */
+void saveId() {
+    FILE *file;
+    file = fopen("saveGame.txt", "a+");
+    int id = readFileLine("saveGame.txt");
+    int spaceleft;
+    int emptySpace = scores[ROW][COL] - 42;
+
+    printf("\n");
+    printf("Your save ID is %d\n", id);
+    printf("---------------------------------------\n");
+
+    fprintf(file, "%c", scores[ROW][COL]);
+    fprintf(file, "%d %s %s %d", id, &playerOne, &playerTwo, &emptySpace);
+
+    fprintf(file, "\n");
+    fclose(file);
+
+}
+
+/* saves layout */
+void saveBoard() {
+    FILE *file;
+    file = fopen("record.txt", "a+");
+    int id = readFileLine("record.txt");
+    for (int i = 0; i < ROW; i++) {
+            for (int j = 0; j < COL; j++) {
+            fprintf(file, "%c", scores[i][j]);
+            }
+        }
+        fprintf(file, "\n");
+        fclose(file);
+}
+
+void readSave() {
+    int input[10];
+
+    printf("Enter your ID\n");
+    scanf("%d", input);
+
+    FILE *file;
+    file = fopen("saveGame.txt", "r");
+    int id = readFileLine("saveGame.txt");
+
+    if (file == NULL) {
+        printf("Error\n");
+    } else {
+        while(fgets(id, 15, file) != NULL) {
+            printf("%s", id);
+        }
+    }
+    fclose(file);
+
+
+}
+
+void loadGame() {
+    int k;
+
+    printf(" 1 List all saved games\n");
+    printf(" 2 Load a game\n");
+    printf(" 3 Return to main menu\n");
+
+    scanf("%d", &k);
+
+    switch(k) {
+
+        case 1:
+          showGames();
+          printf("\n");
+          loadGame();
+        break;
+
+        case 2:
+            loadTest();
+        break;
+
+        case 3:
+            main();
+        break;
+
+        default:
+        printf("Choose either 1, 2, or 3");
+        // program ends if not 1 or 2 were chosen
+        break;
+    }
+}
+
+void loadTest() {
+    int id;
+
+    printf("Enter your ID\n");
+    scanf("%d", id);
+
+}
+
+/* Show list of all saved games */
+void showGames() {
+     char input[2];
+
+    FILE *file;
+    file = fopen("saveGame.txt", "r");
+
+    if (file == NULL) {
+        printf("Error\n");
+    } else {
+        while(fgets(input, 2, file) != NULL) {
+            printf("%s", input);
+
+        }
+    }
+    fclose(file);
+}
+
+
 
 void fill_box()
 {
