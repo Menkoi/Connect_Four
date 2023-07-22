@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 
 #define COL  7
 #define ROW  6
@@ -12,39 +13,44 @@ char playerX = 'X';
 char playerO = 'O';
 char scores[ROW][COL];
 
+int readFileLine();
 
-void readSave();
-int readFileLine(const char *filename);
-
-typedef struct {
+ typedef struct {
     int id;
     char playerOneName[15];
     char playerTwoName[15];
-    char gameBoard[42]
-} profile;
+    char gameBoard[42];
+    int spaceLeft;
+} Profile;
 
+int amountSpaceLeft;
 
 // Prototype
-void playerName();
-void save();
-void saveId();
-void saveBoard();
-void loadTest();
-void showGames();
-
+void gameFunction();
 void layout();
 void init_scores();
 void choice();
 void fill_box();
-void loadGame();
 int check(char disc);
+void playerName();
+
+void save();
+void saveId();
+void saveBoard();
+
+void loadId();
+void loadAllGames();
+void loadGame();
+void loadFromPlayer();
+void loadBoard();
+void returnGame();
 
 int main()
 {
      int menuSelect;
-
+        printf("\n\n");
         printf("CONNECT FOUR\n");
-        printf("\n");
+        printf("\n\n");
         printf(" 1  Play New Game\n");
         printf(" 2  Load Already Saved Game\n");
         printf(" 3  Exit Game\n");
@@ -56,7 +62,8 @@ int main()
 
     switch (menuSelect) {
         case 1:
-          newGame();
+        playerName();
+        newGame();
         break;
 
         case 2:
@@ -71,30 +78,31 @@ int main()
 
         default:
           printf("input only numbers 1, 2, or 3\n");
+          main();
         break;
     }
     return 0;
 }
 
-// create new game
+/* Create new game */
  void newGame() {
-     playerName();
      init_scores();
      layout();
+     gameFunction();
+ }
 
-     while (1)
-    {
+ void gameFunction() {
+
+      while (true){
         printf("Player %c, your turn!\n", playerX);
         choice();
         printf("\n\n");
         layout();
-        if (check('X'))
-        {
+        if (check('X')){
             printf("\n\nPlayer %s wins!\n\n", playerOne);
             gameEnd();
         }
-        if (check('O'))
-        {
+        if (check('O')){
             printf("\n\nPlayer %s wins!\n\n", playerTwo);
             gameEnd();
         }
@@ -102,7 +110,6 @@ int main()
     }
 
     return 0;
-
  }
 
  void gameEnd() {
@@ -115,6 +122,7 @@ int main()
 
     switch(k) {
         case 1:
+        playerName();
         newGame();
         break;
 
@@ -124,11 +132,9 @@ int main()
 
         default:
         printf("Choose either 1 or 2");
-        // program ends if not 1 or 2 were chosen
         break;
     }
 }
-
 
 
 // Players input name
@@ -140,9 +146,9 @@ void playerName() {
     printf("Enter Player 2 Name\n");
     scanf("%s", &playerTwo);
 
-    printf("\n");
+    printf("\n\n");
     printf("Welcome %s, and %s\n", playerOne, playerTwo);
-    printf("\n");
+    printf("\n\n");
 
 }
 
@@ -156,35 +162,30 @@ void layout() {
         for (int j = 0; j < COL; j++) {
             printf("   %c", scores[i][j]);
         }
-        printf(" |\n");
+        printf("\n");
         printf("%s\n", body);
     }
+    printf("\n");
 }
 
  // fill layout with empty space
- void init_scores()
-{
-    for (int i = 0; i < ROW; i++)
-    {
-        for (int j = 0; j < COL; j++)
-        {
+ void init_scores(){
+    for (int i = 0; i < ROW; i++){
+        for (int j = 0; j < COL; j++){
             scores[i][j] = ' ';
         }
     }
 }
 
-// user input choice into box
-void choice()
-{
+/* user input into box */
+void choice(){
     int input;
 
-    while (true)
-    {
+    while (true){
         printf("\nChoose box or press 0 to save: ");
         scanf("%i", &input);
 
-        if(input == 0)
-        {
+        if(input == 0){
             save();
             main();
         }
@@ -215,11 +216,9 @@ void choice()
 
             default:
                 playerO = 666;
-                printf("\nWrong number! \n\n");
-                //layout();
+                printf("\nWrong number!\n");
         }
-        if ((playerO >= 0 && playerO <= 6) && (scores[0][playerO] == ' '))
-        {
+        if ((playerO >= 0 && playerO <= 6) && (scores[0][playerO] == ' ')){
             fill_box();
             playerX = (playerX == 'X') ? 'O' : 'X';
             break;
@@ -230,11 +229,15 @@ void choice()
 void save()
 {
     int b;
+
     printf("\n");
     printf(" Press 1 to save\n");
     printf("        OR\n");
     printf(" 2 Return to main menu\n");
+    printf("\n-------------------------------------------\n");
     printf("*Going to main menu will lose all progress*\n");
+    printf("-------------------------------------------");
+    printf("\n\n");
 
     scanf("%d", &b);
 
@@ -267,113 +270,244 @@ void saveId() {
     FILE *file;
     file = fopen("saveGame.txt", "a+");
     int id = readFileLine("saveGame.txt");
-    int spaceleft;
-    int emptySpace = scores[ROW][COL] - 42;
+
+    int emptySpace;
 
     printf("\n");
     printf("Your save ID is %d\n", id);
     printf("---------------------------------------\n");
 
-    fprintf(file, "%c", scores[ROW][COL]);
-    fprintf(file, "%d %s %s %d", id, &playerOne, &playerTwo, &emptySpace);
+    fprintf(file, "%d  %s  %s  %d", id, &playerOne, &playerTwo, &emptySpace);
 
     fprintf(file, "\n");
     fclose(file);
 
 }
 
-/* saves layout */
+/* saves current layout */
 void saveBoard() {
     FILE *file;
-    file = fopen("record.txt", "a+");
-    int id = readFileLine("record.txt");
+    file = fopen("history.txt", "a+");
+    int id = readFileLine("history.txt");
     for (int i = 0; i < ROW; i++) {
             for (int j = 0; j < COL; j++) {
-            fprintf(file, "%c", scores[i][j]);
+            fprintf(file,"%c", scores[i][j]);
             }
         }
         fprintf(file, "\n");
         fclose(file);
 }
 
-void readSave() {
-    int input[10];
-
-    printf("Enter your ID\n");
-    scanf("%d", input);
-
-    FILE *file;
-    file = fopen("saveGame.txt", "r");
-    int id = readFileLine("saveGame.txt");
-
-    if (file == NULL) {
-        printf("Error\n");
-    } else {
-        while(fgets(id, 15, file) != NULL) {
-            printf("%s", id);
-        }
-    }
-    fclose(file);
-
-
-}
-
 void loadGame() {
     int k;
 
     printf(" 1 List all saved games\n");
-    printf(" 2 Load a game\n");
-    printf(" 3 Return to main menu\n");
+    printf(" 2 List all saved games for particular player\n");
+    printf(" 3 Show the board of one of the saved games\n");
+    printf(" 4 Load a game\n");
+    printf(" 5 Return to main menu\n");
 
     scanf("%d", &k);
 
     switch(k) {
 
         case 1:
-          showGames();
+          loadAllGames();
           printf("\n");
           loadGame();
         break;
 
         case 2:
-            loadTest();
+            loadFromPlayer();
+            printf("\n");
+            loadGame();
         break;
 
         case 3:
+            loadBoard();
+            loadGame();
+        break;
+
+        case 4:
+            loadId();
+            printf("\n");
+        break;
+
+        case 5:
             main();
         break;
 
         default:
-        printf("Choose either 1, 2, or 3");
-        // program ends if not 1 or 2 were chosen
+        printf("\nChoose either 1, 2, 3, 4, or 5\n\n");
+        loadGame();
         break;
     }
 }
 
-void loadTest() {
-    int id;
-
-    printf("Enter your ID\n");
-    scanf("%d", id);
-
-}
-
 /* Show list of all saved games */
-void showGames() {
-     char input[2];
+void loadAllGames() {
 
     FILE *file;
     file = fopen("saveGame.txt", "r");
+    int read = readFileLine("saveGame.txt");
 
-    if (file == NULL) {
-        printf("Error\n");
+    Profile user[read];
+    printf("\n\n---------SAVED GAMES----------\n\n");
+
+    for (int i = 0; i < read - 1; i++) {
+        fscanf(file, "%d %s %s %d\n", &user[read].id, &user[read].playerOneName, &user[read].playerTwoName, &user[read].spaceLeft);
+        printf("id-%d P1-%s P2-%s Space-%d\n", user[read].id, user[read].playerOneName, user[read].playerTwoName, user[read].spaceLeft);
+    }
+
+    printf("\n\n-----------------------------\n\n");
+    fclose(file);
+
+}
+
+/* List all saved games from player name */
+void loadFromPlayer(){
+
+    int playerName[15];
+    int firstPlayer;
+    int secondPlayer;
+
+    printf("Enter player name\n");
+    scanf("%s", &playerName);
+
+    FILE *file;
+    file = fopen("saveGame.txt", "r");
+    int read = readFileLine("saveGame.txt");
+
+    Profile user[read];
+
+    for (int i = 0; i < read - 1; i++) {
+        fscanf(file, "%d %s %s %d\n", &user[read].id, &user[read].playerOneName, &user[read].playerTwoName, &user[read].spaceLeft);
+
+        firstPlayer = strcmp(user[read].playerOneName, playerName);
+        secondPlayer = strcmp(user[read].playerTwoName, playerName);
+
+        if (firstPlayer == 0 || secondPlayer == 0) {
+            printf("\n");
+            printf("id-%d P1-%s P2-%s Space-%d\n", user[read].id, user[read].playerOneName, user[read].playerTwoName, user[read].spaceLeft);
+        }
+
+      }
+
+    fclose(file);
+    printf("\n\n");
+}
+
+/* Print out board from saved game*/
+void loadBoard() {
+
+    int idNum;
+
+    FILE *file;
+    file = fopen("saveGame.txt", "r");
+    int read = readFileLine("saveGame.txt");
+
+    FILE *file2;
+    file2 = fopen("history.txt", "r");
+    int check = readFileLine("history.txt");
+
+    int k = 0;
+    char c;
+
+    printf("Enter Id\n");
+    scanf("%d", &idNum);
+
+    Profile user[read];
+
+    if (idNum > read - 1) {
+        printf("\nError, cant find ID number\n");
+        printf("\n\n");
+        main();
     } else {
-        while(fgets(input, 2, file) != NULL) {
-            printf("%s", input);
-
+        for (int i = 0; i < read - 1; i++) {
+            fscanf(file, "%d %s %s %d\n", &user[read].id, &user[read].playerOneName, &user[read].playerTwoName, &user[read].spaceLeft);
+            if (idNum == user[read].id) {
+                printf("\n\n------------------------------\n\n");
+                printf("id-%d P1-%s P2-%s Space-%d\n", user[read].id, user[read].playerOneName, user[read].playerTwoName, user[read].spaceLeft);
+            }
         }
     }
+
     fclose(file);
+    printf("\n\n");
+
+    do {
+        fscanf(file2, "%c", &c);
+        if (c == '\n' ) {
+            k++;
+        }
+    } while (k < (idNum - 1));
+
+     for (int i = 0; i < ROW; i++) {
+            for (int j = 0; j < COL; j++) {
+            fscanf(file2, "%c", &c);
+            scores[i][j] = c;
+            }
+        }
+        fclose(file2);
+        layout();
+        printf("\n\n------------------------------\n\n");
+
+}
+
+/* Load from saved game */
+void loadId() {
+
+    int idNum;
+
+    FILE *file;
+    file = fopen("saveGame.txt", "r");
+    int read = readFileLine("saveGame.txt");
+
+    FILE *file2;
+    file2 = fopen("history.txt", "r");
+    int check = readFileLine("history.txt");
+
+    int k = 0;
+    char c;
+
+    printf("Enter Id\n");
+    scanf("%d", &idNum);
+
+    Profile user[read];
+
+    if (idNum > read - 1) {
+        printf("\nError, cant find ID number\n");
+        printf("\n\n");
+        loadGame();
+    } else {
+        for (int i = 0; i < read - 1; i++) {
+            fscanf(file, "%d %s %s %d\n", &user[read].id, &user[read].playerOneName, &user[read].playerTwoName, &user[read].spaceLeft);
+            if (idNum == user[read].id) {
+                printf("id-%d P1-%s P2-%s Space-%d\n", user[read].id, user[read].playerOneName, user[read].playerTwoName, user[read].spaceLeft);
+            }
+        }
+    }
+
+    fclose(file);
+    printf("\n\n");
+
+    do {
+        fscanf(file2, "%c", &c);
+        if (c == '\n' ) {
+            k++;
+        }
+    } while (k < (idNum - 1));
+
+     for (int i = 0; i < ROW; i++) {
+            for (int j = 0; j < COL; j++) {
+            fscanf(file2, "%c", &c);
+            scores[i][j] = c;
+            }
+        }
+        fclose(file2);
+        layout();
+        gameFunction();
+
 }
 
 
@@ -383,11 +517,10 @@ void fill_box()
     // fill the boxes
     int level ;
 
-    for (level = ROW-1; level >= 0; level--)
-    {
-        if (scores[level][playerO] == ' ')
-        {
+    for (level = ROW-1; level >= 0; level--){
+        if (scores[level][playerO] == ' '){
             scores[level][playerO] = playerX;
+
             break;
         }
     }
@@ -400,13 +533,10 @@ int check(char playerX)
     int count;
     int ways = 4;
 
-    for (i = 0; i < ROW; ++i)
-    {
-        for (j = 0; j < ways; ++j)
-        {
+    for (i = 0; i < ROW; ++i){
+        for (j = 0; j < ways; ++j){
             count = 0;
-            for (k = 0; k < 4; ++k)
-            {
+            for (k = 0; k < 4; ++k){
                 if (scores[i][j + k] == playerX) count++;
             }
             if (count == 4) return 1;
@@ -418,13 +548,10 @@ int check(char playerX)
 
     ways = 3;
 
-    for (j = 0; j < COL; ++j)
-    {
-        for (i = 0; i < ways; ++i)
-        {
+    for (j = 0; j < COL; ++j){
+        for (i = 0; i < ways; ++i){
             count = 0;
-            for (k = 0; k < 4; ++k)
-            {
+            for (k = 0; k < 4; ++k){
                 if (scores[i + k][j] == playerX) count++;
             }
             if (count == 4) return 1;
@@ -434,16 +561,12 @@ int check(char playerX)
     /* check diagonals*/
 
     int ii, jj;
-    for (i = 1; i < ROW-1; i++)
-    {
-        for (j = 1; j < COL-1; j++)
-        {
+    for (i = 1; i < ROW-1; i++){
+        for (j = 1; j < COL-1; j++){
             count = 0;
 
-            for (ii = i, jj = j; (ii >= 0) || (jj >= 0); ii--, jj--)
-            {
-                if (scores[ii][jj] == playerX)
-                {
+            for (ii = i, jj = j; (ii >= 0) || (jj >= 0); ii--, jj--){
+                if (scores[ii][jj] == playerX){
                     count++;
                     if (count == 4) return 1;
                 }
@@ -451,10 +574,8 @@ int check(char playerX)
                     break;
             }
 
-            for (ii = i+1, jj = j+1; (ii <= ROW-1) || (jj <= COL-1); ii++, jj++)
-            {
-                if (scores[ii][jj] == playerX)
-                {
+            for (ii = i+1, jj = j+1; (ii <= ROW-1) || (jj <= COL-1); ii++, jj++){
+                if (scores[ii][jj] == playerX){
                     count++;
                     if (count == 4) return 1;
                 }
@@ -465,10 +586,8 @@ int check(char playerX)
             /* right-tilted diagonals */
             count = 0;
 
-            for (ii = i, jj = j; (ii <= ROW-1) || (jj >= 0); ii++, jj--)
-            {
-                if (scores[ii][jj] == playerX)
-                {
+            for (ii = i, jj = j; (ii <= ROW-1) || (jj >= 0); ii++, jj--){
+                if (scores[ii][jj] == playerX){
                     count++;
                     if (count == 4) return 1;
                 }
@@ -476,10 +595,8 @@ int check(char playerX)
                     break;
             }
 
-            for (ii = i-1, jj = j+1; (ii >= 0) || (jj <= COL-1); ii--, j++)
-            {
-                if (scores[ii][jj] == playerX)
-                {
+            for (ii = i-1, jj = j+1; (ii >= 0) || (jj <= COL-1); ii--, j++){
+                if (scores[ii][jj] == playerX){
                     count++;
                     if (count == 4) return 1;
                 }
